@@ -19,8 +19,8 @@ using ValueType = double;
 class MyVector
 {
 public:
-    MyVector(size_t size = 0, ResizeStrategy strategy = ResizeStrategy::Multiplicative, float coef = 1.5f);
-    MyVector(size_t size, ValueType value, ResizeStrategy strategy = ResizeStrategy::Multiplicative, float coef = 1.5f);
+    MyVector(size_t size = 0, ResizeStrategy strategy = ResizeStrategy::Multiplicative, float coef = 2);
+    MyVector(size_t size, ValueType value, ResizeStrategy strategy = ResizeStrategy::Multiplicative, float coef = 2);
     
     MyVector(const MyVector& copy);
     MyVector& operator=(const MyVector& copy);
@@ -101,7 +101,7 @@ public:
     // изменить размер
     // если новый размер больше текущего, то новые элементы забиваются дефолтными значениями
     // если меньше - обрезаем вектор
-    void resize(const size_t size, const ValueType = 0.0);
+    void resize(const size_t size, const ValueType value = 2);
 
     // очистка вектора, без изменения capacity
     void clear();
@@ -109,35 +109,36 @@ public:
     void print();
     
     MyVector sortedSquares(const MyVector& vec, SortedStrategy strategy) {
-        if (strategy == SortedStrategy::increase) {
-            for (size_t i = 0; i<_size; i++) {
-                _data[i] *= _data[i];
-            }
-            ValueType temp = 0;
-            for (size_t i = 0; i<_size-1; ++i) {
-                for (size_t j = 0; j<_size-1; ++j) {
-                    if (_data[j+1] < _data[j]) {
-                        temp = _data[j+1];
-                        _data[j+1] = _data[j];
-                        _data[j] = temp;
-                    }
-                }
-            }
+        for (size_t i = 0; i<vec._size; i++) {
+            vec._data[i] *= vec._data[i];
         }
-        else if (strategy == SortedStrategy::decrease) {
-            for (size_t i = 0; i<_size; i++) {
-                _data[i] *= _data[i];
-            }
-            ValueType temp = 0;
-            for (size_t i = 0; i<_size-1; ++i) {
-                for (size_t j = 0; j<_size-1; ++j) {
-                    if (_data[j+1] > _data[j]) {
-                        temp = _data[j+1];
-                        _data[j+1] = _data[j];
-                        _data[j] = temp;
+        ValueType temp = 0;
+        switch (strategy) {
+            case SortedStrategy::increase: {
+                for (size_t i = 0; i<vec._size-1; ++i) {
+                    for (size_t j = 0; j<vec._size-1; ++j) {
+                        if (vec._data[j+1] <vec._data[j]) {
+                            temp = vec._data[j+1];
+                            vec._data[j+1] = vec._data[j];
+                            vec._data[j] = temp;
+                        }
                     }
                 }
             }
+            case SortedStrategy::decrease: {
+                for (size_t i = 0; i<vec._size-1; ++i) {
+                    for (size_t j = 0; j<vec._size-1; ++j) {
+                        if (vec._data[j+1] > vec._data[j]) {
+                            temp = vec._data[j+1];
+                            vec._data[j+1] = vec._data[j];
+                            vec._data[j] = temp;
+                        }
+                    }
+                }
+                break;
+            }
+            default:
+                break;
         }
         return vec;
     }

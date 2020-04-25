@@ -1,7 +1,7 @@
 #pragma once
 
 #include "QueueImplementation.h"
-#include "Vector/MyVector.h"
+#include "MyVector.h"
 
 class VectorQueue : public QueueImplementation, public MyVector
 {

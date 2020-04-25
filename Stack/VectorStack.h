@@ -1,6 +1,6 @@
 #pragma once
 #include "StackImplementation.h"
-#include "Vector/MyVector.h"
+#include "MyVector.h"
 
 // вариант с использованием ранее написанного вектора и множественного наследования
 // если бы вектор не был реализован, то было бы наследование только от интерфейса

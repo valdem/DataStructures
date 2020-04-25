@@ -1,7 +1,7 @@
 #pragma once
 
 #include "QueueImplementation.h"
-#include "LinkedList/LinkedList.h"
+#include "LinkedList.h"
 
 class ListQueue : public QueueImplementation, public LinkedList
 {

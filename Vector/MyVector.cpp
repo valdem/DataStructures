@@ -8,7 +8,12 @@ MyVector::MyVector(size_t size, ResizeStrategy strategy, float coef) {
             _size = size;
         break;
         case ResizeStrategy::Multiplicative:
-            _capacity = size*coef;
+            if (size == 0) {
+                _capacity = 1;
+            }
+            else {
+                _capacity = size*coef;
+            }
             _data = new ValueType[_capacity];
             _size = size;
         break;
@@ -22,18 +27,20 @@ MyVector::MyVector(size_t size, ValueType value, ResizeStrategy strategy, float 
             _capacity = size+coef;
             _data = new ValueType[_capacity];
             _size = size;
-            for (size_t i = 0; i<_size; i++) {
-                _data[i] = value;
-            }
         break;
         case ResizeStrategy::Multiplicative:
-            _capacity = size*coef;
+            if (size == 0) {
+                _capacity = 1;
+            }
+            else {
+                _capacity = size*coef;
+            }
             _data = new ValueType[_capacity];
             _size = size;
-            for (size_t i = 0; i<_size; i++) {
-                _data[i] = value;
-            }
         break;
+    }
+    for (size_t i = 0; i<_size; i++) {
+        _data[i] = value;
     }
 }
 
@@ -47,22 +54,24 @@ MyVector::MyVector(const MyVector& copy) {
 }
 
 MyVector& MyVector::operator=(const MyVector& copy) {
-    ValueType* eqVector = new ValueType[copy._capacity];
-    for (size_t i = 0; i<_size; i++) {
-        eqVector[i] = copy[i];
+    if (this == &copy) {
+        return *this;
     }
-    delete[] _data;
-    this->_data = eqVector;
-    this->_size = copy._size;
-    this->_capacity = copy._capacity;
+    _size = copy._size;
+    _capacity = copy._capacity;
+    
+    delete [] _data;
+    
+    _data = new ValueType[copy._capacity];
+    for (size_t i = 0; i<_size; i++) {
+        _data[i] = copy._data[i];
+    }
     return *this;
 }
 
 MyVector::~MyVector() {
-    _data = nullptr;
-    delete _data;
-    _size = 0;
     _capacity = 0;
+    _size = 0;
 }
 
 size_t MyVector:: capacity() const {
@@ -74,9 +83,8 @@ size_t MyVector:: size() const {
 }
 
 float MyVector:: loadFactor() {
-    return _size/_capacity;
+    return (float)_size/_capacity;
 }
-
 
 MyVector::iterator MyVector::begin() const {
     return MyVector::iterator{this, 0};
@@ -94,88 +102,144 @@ ValueType& MyVector:: operator[](const size_t i) const {
 }
 
 void MyVector:: pushBack(const ValueType& value) {
-    ValueType* puVector = new ValueType[_capacity+1];
-    for (size_t i = 0; i<_size; i++) {
-        puVector[i] = _data[i];
+    if (_size+1 >= _capacity) {
+        MyVector puVector(_capacity+1);
+        for (size_t i = 0; i<_size; i++) {
+            puVector._data[i] = _data[i];
+        }
+        puVector._data[_size] = value;
+        _data = puVector._data;
+        _size += 1;
+        _capacity = puVector._capacity;
     }
-    puVector[_size] = value;
-    delete[] _data;
-    this->_data = puVector;
-    this->_size += 1;
-    this->_capacity += 1;
+    else {
+        _data[_size] = value;
+        _size += 1;
+    }
 }
 
 void MyVector:: insert(const size_t i, const ValueType& value) {
-    auto inVector = new ValueType[_capacity+1];
-    for (auto idx = 0; idx < _size; ++idx) {
-        inVector[idx] = _data[idx];
+    if (i == _size) {
+        pushBack(value);
+        return;
     }
-    delete[] _data;
-    this->_data = inVector;
-    _data[i] = value;
-    this->_size += 1;
-    this->_capacity += 1;
+    if (_size+1 >= _capacity) {
+        MyVector inVector(_capacity+1);
+        for (size_t j = 0; j<i; j++) {
+            inVector._data[j] = _data[j];
+        }
+        inVector._data[i] = value;
+        for (size_t j = i+1; j<inVector._size; j++) {
+            inVector._data[j] = _data[j-1];
+        }
+        _data = inVector._data;
+        _size += 1;
+        _capacity = inVector._capacity;
+    }
+    else {
+        _size += 1;
+        for (size_t j = i; j<_size; j++) {
+            _data[j+1] = _data[j];
+        }
+        _data[i] = value;
+    }
 }
 
 void MyVector:: insert(const size_t i, const MyVector& value) {
-    auto inVector = new ValueType[_capacity+value.size()];
-    for (auto idx = 0; idx<i; ++idx) {
-        inVector[idx] = _data[idx];
+    if (i == _size) {
+        pushBack(value._data[i]);
+        return;
     }
-    size_t j = 0;
-    for(auto idx = i; idx<i + value.size(); ++idx) {
-        inVector[idx] = value[j];
-        j++;
+    if (_size+value._size >= _capacity) {
+        MyVector inVector(_size+value._size);
+        for (auto idx = 0; idx<i; ++idx) {
+            inVector[idx] = _data[idx];
+        }
+        size_t j = 0;
+        for(auto idx = i; idx<i + value.size(); ++idx) {
+            inVector[idx] = value[j];
+            j++;
+        }
+        for (auto idx = i + value.size(); idx<_size+value.size(); ++idx) {
+            size_t k = i;
+            inVector[idx] = _data[k];
+            k++;
+        }
+        _data = inVector._data;
+        _size += value._size;
+        _capacity = inVector._capacity;
     }
-    for (auto idx = i + value.size(); idx<_size+value.size(); ++idx) {
-        size_t k = i;
-        inVector[idx] = _data[k];
-        k++;
+    else {
+        for (size_t idx = _size; idx>i; idx--) {
+            _data[i] = _data[i-value._size];
+        }
+        for (size_t j = i; j<i+value._size; j++) {
+            _data[j] = value._data[value._size-i];
+        }
+        _size += value._size;
     }
-    delete[] _data;
-    this->_data = inVector;
-    this->_size += value.size();
-    this->_capacity += value.size();
 }
 
 
 void MyVector:: popBack() {
-    ValueType* popVector = new ValueType[_capacity-1];
-    for (size_t i = 0; i<_size-1; i++) {
-        popVector[i] = _data[i];
+    if (loadFactor()==1/4) {
+        MyVector popVector(_capacity-1);
+        for (size_t i = 0; i<_size-1; i++) {
+            popVector._data[i] = _data[i];
+        }
+        _data = popVector._data;
+        _size -= 1;
+        _capacity = popVector._capacity;
     }
-    delete[] _data;
-    this->_data = popVector;
-    this->_size -= 1;
-    this->_capacity -= 1;
+    else {
+        _size -= 1;
+    }
 }
 
 void MyVector:: erase(const size_t i) {
-    ValueType* erVector = new ValueType[_capacity-1];
-    for (size_t j = 0; j<i; j++) {
-        erVector[j] = _data[j];
+    if (i == _size-1) {
+        popBack();
+        return;
     }
-    for (size_t j = i; j<_size-1; j++) {
-        erVector[j] = _data[j+1];
+    if (loadFactor() == 1/4) {
+        MyVector erVector(_capacity-1);
+        for (size_t j = 0; j<i; j++) {
+            erVector._data[j] = _data[j];
+        }
+        for (size_t j = i; j<_size-1; j++) {
+            erVector._data[j] = _data[j+1];
+        }
+        _data = erVector._data;
+        _size -= 1;
+        _capacity = erVector._capacity;
     }
-    delete[] _data;
-    this->_data = erVector;
-    this->_size -= 1;
-    this->_capacity -= 1;
+    else {
+        for (size_t j = i; j<_size-1; j++) {
+            _data[j] = _data[j+1];
+        }
+        _size -= 1;
+    }
 }
 
 void MyVector:: erase(const size_t i, const size_t len) {
-    ValueType* erVector2 = new ValueType[_capacity-len];
-    for (size_t j = 0; j<i; j++) {
-        erVector2[j] = _data[j];
+    if (loadFactor() == 1/4) {
+        MyVector erVector2(_capacity-len);
+        for (size_t j = 0; j<i; j++) {
+            erVector2._data[j] = _data[j];
+        }
+        for (size_t j = i; j<_size-len; j++) {
+            erVector2._data[j] = _data[j+len];
+        }
+        _data = erVector2._data;
+        _size -= len;
+        _capacity = erVector2._capacity;
     }
-    for (size_t j = i; j<_size-len; j++) {
-        erVector2[j] = _data[j+len];
+    else {
+        for (size_t j = i; j<_size-len; j++) {
+            _data[j] = _data[j+len];
+        }
+        _size -= len;
     }
-    delete[] _data;
-    this->_data = erVector2;
-    this->_size -= len;
-    this->_capacity -= len;
 }
 
 long long int MyVector:: find(const ValueType& value, bool isBegin) const {
@@ -198,44 +262,50 @@ long long int MyVector:: find(const ValueType& value, bool isBegin) const {
 
 void MyVector:: reserve(const size_t capacity) {
     if (capacity<_capacity) {
-        this->resize(capacity);
+        resize(capacity);
+        return;
     }
-    else {
-        this->_capacity = capacity;
-        ValueType* resVector = new ValueType[_capacity];
-        for (size_t i = 0; i<_size; i++) {
-            resVector[i] = _data[i];
-        }
-        delete[] _data;
-        this->_data = resVector;
+    MyVector bufVector(*this);
+    delete[] _data;
+    _capacity = capacity;
+    _data = new ValueType[_capacity];
+    for (size_t i = 0; i<_size; i++) {
+        _data[i] = bufVector._data[i];
     }
 }
 
 
-void MyVector:: resize(const size_t size, const ValueType) {
-    if (size>_capacity) {
-        ValueType* reVector = new ValueType[size];
-        for (size_t i = 0; i<_size; i++) {
-            reVector[i] = _data[i];
+void MyVector:: resize(const size_t size, const ValueType value) {
+    if (_size == size) {
+        return;
+    }
+    
+    MyVector bufVector(*this);
+    _size = size;
+    MyVector resVector(_size);
+    
+    if (_size > bufVector._size) {
+        for (size_t i = 0; i<bufVector._size; i++) {
+            resVector._data[i] = _data[i];
         }
-        delete[] _data;
-        this->_data = reVector;
-        this->_capacity = size;
-        this->_size = size;
+        for (size_t i = bufVector._size; i<_size; i++) {
+            resVector._data[i] = value;
+        }
     }
     else {
-        ValueType* reVector = new ValueType[size];
-        for (size_t i = 0; i<size; i++) {
-            reVector[i] = _data[i];
+        for (size_t i = 0; i<_size; i++) {
+            resVector._data[i] = _data[i];
         }
-        delete[] _data;
-        this->_data = reVector;
-        this->_size = size;
-        this->_capacity = size;
     }
+    delete[] _data;
+    _data = resVector._data;
+    _capacity = resVector._capacity;
 }
 
 void MyVector:: clear() {
+    for (size_t i = 0; i<_size; i++) {
+        _data[i] = 0;
+    }
     _size = 0;
 }
 

@@ -8,19 +8,19 @@ void VectorQueue:: dequeue() {
         index++;
     }
     else {
-        MyVector::~MyVector();
+        throw std::length_error("Неправильная операция");
     }
 }
 const ValueType& VectorQueue:: front() const {
-    return MyVector:: operator[](index);
-}
-bool VectorQueue:: isEmpty() const {
-    if (MyVector:: operator[](0)) {
-        return false;
+    if (index == size()) {
+        throw std::length_error("Неправильная операция");
     }
     else {
-        return true;
+        return MyVector:: operator[](index);
     }
+}
+bool VectorQueue:: isEmpty() const {
+    return !MyVector::size();
 }
 size_t VectorQueue:: size() const {
     return MyVector::size();

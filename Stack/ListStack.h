@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StackImplementation.h"
-#include "LinkedList/LinkedList.h"
+#include "LinkedList.h"
 
 
 // вариант с использованием ранее написанного списка и множественного наследования

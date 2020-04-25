@@ -14,12 +14,7 @@ const ValueType& VectorStack:: top() const {
 }
 // проверка на пустоту
 bool VectorStack:: isEmpty() const {
-    if (MyVector:: operator[](0)) {
-        return false;
-    }
-    else {
-        return true;
-    }
+    return !MyVector:: size();
 }
 // размер
 size_t VectorStack:: size() const {

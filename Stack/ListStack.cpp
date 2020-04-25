@@ -16,17 +16,7 @@ const ValueType& ListStack:: top() const {
 }
 // проверка на пустоту
 bool ListStack:: isEmpty() const {
-    if (LinkedList::getNode(0)) {
-        if (LinkedList::getNode(0)->value) {
-            return false;
-        }
-        else {
-            return true;
-        }
-    }
-    else {
-        return false;
-    }
+    return !LinkedList::size();
 }
 // размер
 size_t ListStack:: size() const {

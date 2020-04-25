@@ -1,7 +1,7 @@
 #pragma once
 
 #include "QueueImplementation.h"
-#include "DoubleList/DoubleList.h"
+#include "DoubleList.h"
 
 class DoubleListQueue : public QueueImplementation, public DoubleList
 {

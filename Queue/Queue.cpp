@@ -37,42 +37,67 @@ Queue::Queue(const ValueType* valueArray, const size_t arraySize,
     {
     case QueueContainer::List: {
         _pimpl = new ListQueue();
-        for (size_t i = 0; i<arraySize; i++) {
-            _pimpl->enqueue(valueArray[i]);
-        }
         break;
     }
     case QueueContainer::Vector: {
         _pimpl = new VectorQueue();
-        for (size_t i = 0; i<arraySize; i++) {
-            _pimpl->enqueue(valueArray[i]);
-        }
         break;
     }
     case QueueContainer::DoubleList: {
         _pimpl = new DoubleListQueue();
-        for (size_t i = 0; i<arraySize; i++) {
-            _pimpl->enqueue(valueArray[i]);
-        }
         break;
     }
     default:
         throw std::runtime_error("Неизвестный тип контейнера");
     }
+    for (size_t i = 0; i<arraySize; i++) {
+        _pimpl->enqueue(valueArray[i]);
+    }
     
 }
 
 Queue::Queue(const Queue& copyQueue) {
-    *_pimpl = *copyQueue._pimpl;
-    this->_containerType = copyQueue._containerType;
+    switch (_containerType)
+    {
+    case QueueContainer::List: {
+        _pimpl = new ListQueue(*(static_cast<ListQueue*>(copyQueue._pimpl)));
+        break;
+    }
+    case QueueContainer::Vector: {
+        _pimpl = new VectorQueue(*(static_cast<VectorQueue*>(copyQueue._pimpl)));
+        break;
+    }
+    case QueueContainer::DoubleList: {
+        _pimpl = new DoubleListQueue(*(static_cast<DoubleListQueue*>(copyQueue._pimpl)));
+        break;
+    }
+    default:
+        throw std::runtime_error("Неизвестный тип контейнера");
+    }
 }
 Queue& Queue:: operator=(const Queue& copyQueue) {
     if (this == &copyQueue) {
         return *this;
     }
-    Queue bufStack(copyQueue);
-    this->_pimpl = bufStack._pimpl;
-    this->_containerType = bufStack._containerType;
+    delete _pimpl;
+    
+    switch (_containerType)
+    {
+    case QueueContainer::List: {
+        _pimpl = new ListQueue(*(static_cast<ListQueue*>(copyQueue._pimpl)));
+        break;
+    }
+    case QueueContainer::Vector: {
+        _pimpl = new VectorQueue(*(static_cast<VectorQueue*>(copyQueue._pimpl)));
+        break;
+    }
+    case QueueContainer::DoubleList: {
+        _pimpl = new DoubleListQueue(*(static_cast<DoubleListQueue*>(copyQueue._pimpl)));
+        break;
+    }
+    default:
+        throw std::runtime_error("Неизвестный тип контейнера");
+    }
     
     return *this;
 }

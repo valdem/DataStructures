@@ -4,6 +4,7 @@
 #include "StackImplementation.h"
 
 #include <stdexcept>
+#include <algorithm>
 
 Stack::Stack(StackContainer container)
     : _containerType(container)
@@ -30,16 +31,30 @@ Stack::Stack(const ValueType* valueArray, const size_t arraySize, StackContainer
     {
     case StackContainer::List: {
         _pimpl = new ListStack();
-        for (size_t i = 0; i<arraySize; i++) {
-            _pimpl->push(valueArray[i]);
-        }
         break;
     }
     case StackContainer::Vector: {
         _pimpl = new VectorStack();
-        for (size_t i = 0; i<arraySize; i++) {
-            _pimpl->push(valueArray[i]);
-        }
+        break;
+    }
+    default:
+        throw std::runtime_error("Неизвестный тип контейнера");
+    }
+    for (size_t i = 0; i<arraySize; i++) {
+        _pimpl->push(valueArray[i]);
+    }
+}
+
+Stack::Stack(const Stack& copyStack)
+{
+    switch (_containerType)
+    {
+    case StackContainer::List: {
+        _pimpl = new ListStack(*(static_cast<ListStack*>(copyStack._pimpl)));
+        break;
+    }
+    case StackContainer::Vector: {
+        _pimpl = new VectorStack(*(static_cast<VectorStack*>(copyStack._pimpl)));
         break;
     }
     default:
@@ -47,20 +62,26 @@ Stack::Stack(const ValueType* valueArray, const size_t arraySize, StackContainer
     }
 }
 
-Stack::Stack(const Stack& copyStack)
-{
-    *_pimpl = *copyStack._pimpl;
-    this->_containerType = copyStack._containerType;
-}
-
 Stack& Stack::operator=(const Stack& copyStack)
 {
     if (this == &copyStack) {
         return *this;
     }
-    Stack bufStack(copyStack);
-    this->_pimpl = bufStack._pimpl;
-    this->_containerType = bufStack._containerType;
+    delete _pimpl;
+    
+    switch (_containerType)
+    {
+    case StackContainer::List: {
+        _pimpl = new ListStack(*(static_cast<ListStack*>(copyStack._pimpl)));
+        break;
+    }
+    case StackContainer::Vector: {
+        _pimpl = new VectorStack(*(static_cast<VectorStack*>(copyStack._pimpl)));
+        break;
+    }
+    default:
+        throw std::runtime_error("Неизвестный тип контейнера");
+    }
     
     return *this;
 }
