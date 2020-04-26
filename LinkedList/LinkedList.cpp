@@ -160,7 +160,9 @@ void LinkedList::pushBack(const ValueType& value)
     if (_size == 0) {
         pushFront(value);
     }
-    insert(_size, value);
+    else {
+        insert(_size, value);
+    }
 }
 
 void LinkedList::pushFront(const ValueType& value)

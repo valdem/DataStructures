@@ -56,7 +56,9 @@ Queue::Queue(const ValueType* valueArray, const size_t arraySize,
     
 }
 
-Queue::Queue(const Queue& copyQueue) {
+Queue::Queue(const Queue& copyQueue)
+    :Queue(copyQueue._containerType)
+{
     switch (_containerType)
     {
     case QueueContainer::List: {

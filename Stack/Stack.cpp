@@ -46,6 +46,7 @@ Stack::Stack(const ValueType* valueArray, const size_t arraySize, StackContainer
 }
 
 Stack::Stack(const Stack& copyStack)
+    :Stack(copyStack._containerType)
 {
     switch (_containerType)
     {
