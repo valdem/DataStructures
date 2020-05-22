@@ -71,6 +71,7 @@ public:
     
     // доступ к элементу,
     // должен работать за O(1)
+    ValueType& operator[](const size_t i);
     ValueType& operator[](const size_t i) const;
 
     // добавить в конец,
@@ -107,34 +108,18 @@ public:
     void clear();
     
     void print();
+    void changeCapacityInsert();
+    void changeCapacityRemove();
     
     MyVector sortedSquares(const MyVector& vec, SortedStrategy strategy) {
         for (size_t i = 0; i<vec._size; i++) {
             vec._data[i] *= vec._data[i];
         }
-        ValueType temp = 0;
         switch (strategy) {
             case SortedStrategy::increase: {
-                for (size_t i = 0; i<vec._size-1; ++i) {
-                    for (size_t j = 0; j<vec._size-1; ++j) {
-                        if (vec._data[j+1] <vec._data[j]) {
-                            temp = vec._data[j+1];
-                            vec._data[j+1] = vec._data[j];
-                            vec._data[j] = temp;
-                        }
-                    }
-                }
+                break;
             }
             case SortedStrategy::decrease: {
-                for (size_t i = 0; i<vec._size-1; ++i) {
-                    for (size_t j = 0; j<vec._size-1; ++j) {
-                        if (vec._data[j+1] > vec._data[j]) {
-                            temp = vec._data[j+1];
-                            vec._data[j+1] = vec._data[j];
-                            vec._data[j] = temp;
-                        }
-                    }
-                }
                 break;
             }
             default:
@@ -147,4 +132,6 @@ private:
     ValueType* _data = nullptr;
     size_t _size = 0;
     size_t _capacity;
+    float _coef;
+    ResizeStrategy _strategy;
 };

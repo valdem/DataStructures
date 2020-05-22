@@ -21,6 +21,9 @@ void LinkedList::Node::insertNext(const ValueType& value)
 
 void LinkedList::Node::removeNext()
 {
+    if (this->next == nullptr) {
+        throw std::invalid_argument("Element's missing");
+    }
     Node* removeNode = this->next;
     Node* newNext = removeNode->next;
     delete removeNode;
@@ -173,34 +176,50 @@ void LinkedList::pushFront(const ValueType& value)
 
 void LinkedList::remove(const size_t pos)
 {
+    if (pos>_size-1 || pos<0) {
+        throw std::invalid_argument("Element's missing");
+    }
     if (pos == 0) {
-        delete _head;
-        this->_head = _head->next;
+        removeFront();
     }
     else {
         Node* temp = this->_head;
         for (size_t i = 0; i<pos-1; i++) {
             temp = temp->next;
         }
-        delete temp->next;
+        Node* remNode = temp->next;
         temp->next = temp->next->next;
+        delete remNode;
+        _size--;
     }
-    this->_size -= 1;
 }
 
 void LinkedList::removeNextNode(Node* node)
 {
-    node->removeNext();
-    this->_size -= 1;
+    if (node->next == nullptr) {
+        throw std::invalid_argument("Element's missing");
+    }
+    Node* remNode = node->next;
+    Node* curr = remNode->next;
+    node->next = curr;
+    delete remNode;
+    _size--;
 }
 
 void LinkedList::removeFront() {
-    delete _head;
-    this->_head = _head->next;
-    this->_size -= 1;
+    if (_head == nullptr) {
+        throw std::invalid_argument("Element's missing");
+    }
+    Node* temp = _head;
+    _head = _head->next;
+    delete temp;
+    _size--;
 }
 
 void LinkedList::removeBack() {
+    if (_size == 0) {
+        throw std::invalid_argument("Element's missing");
+    }
     remove(_size-1);
 }
 
@@ -211,37 +230,31 @@ long long int LinkedList::findIndex(const ValueType& value) const
     size_t i = 1;
     if (_head->value == value) {
         index = 0;
+        return index;
     }
     else {
         while (findNext) {
             if (findNext->value == value) {
                 index = i;
+                return index;
             }
             findNext = findNext->next;
             i++;
         }
     }
-    return index;
+    throw std::invalid_argument("Element's missing");
 }
 
 LinkedList::Node* LinkedList::findNode(const ValueType& value) const
 {
-    Node* findNext = _head->next;
-    Node* findNode = nullptr;
-    size_t i = 1;
-    if (_head->value == value) {
-        findNode = _head;
-    }
-    else {
-        while (findNext) {
-            if (findNext->value == value) {
-                findNode = findNext;
-            }
-            findNext = findNext->next;
-            i++;
+    Node* findNode = _head;
+    for (size_t i = 0; i < _size; i++) {
+        if (findNode->value == value) {
+            return findNode;
         }
+        findNode = findNode->next;
     }
-    return findNode;
+    throw std::invalid_argument("Element isn't found");
 }
 
 void LinkedList::reverse()
