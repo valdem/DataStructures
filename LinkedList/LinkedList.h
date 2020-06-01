@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <cstdlib>
 
 // потом поменяем на шаблоны
 using ValueType = double;
@@ -35,7 +36,8 @@ public:
     ////
 
     // доступ к значению элемента по индексу
-    ValueType& operator[](const size_t pos) const;
+    const ValueType& operator[](const size_t pos) const;
+    ValueType& operator[](const size_t pos);
     // доступ к узлу по индексу
     LinkedList::Node* getNode(const size_t pos) const;
     
