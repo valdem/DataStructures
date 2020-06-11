@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <cstdlib>
 
 // стратегия изменения capacity
 enum class ResizeStrategy {
@@ -19,8 +20,8 @@ using ValueType = double;
 class MyVector
 {
 public:
-    MyVector(size_t size = 0, ResizeStrategy strategy = ResizeStrategy::Multiplicative, float coef = 2);
-    MyVector(size_t size, ValueType value, ResizeStrategy strategy = ResizeStrategy::Multiplicative, float coef = 2);
+    MyVector(size_t size = 0, ResizeStrategy strategy = ResizeStrategy::Multiplicative, float coef = 1.5f);
+    MyVector(size_t size, ValueType value, ResizeStrategy strategy = ResizeStrategy::Multiplicative, float coef = 1.5f);
     
     MyVector(const MyVector& copy);
     MyVector& operator=(const MyVector& copy);
@@ -42,7 +43,7 @@ public:
         const ValueType& operator*() const {
             return iVector->operator[](index);
         }
-        ValueType& operator*() {
+        const ValueType& operator*() {
             return iVector->operator[](index);
         }
         const ValueType operator->() const{
@@ -72,7 +73,7 @@ public:
     // доступ к элементу,
     // должен работать за O(1)
     ValueType& operator[](const size_t i);
-    ValueType& operator[](const size_t i) const;
+    const ValueType& operator[](const size_t i) const;
 
     // добавить в конец,
     // должен работать за amort(O(1))

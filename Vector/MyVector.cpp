@@ -22,6 +22,9 @@ MyVector::MyVector(size_t size, ResizeStrategy strategy, float coef) {
             _strategy = strategy;
         break;
     }
+    for (size_t i = 0; i<_size; i++) {
+        _data[i] = ValueType();
+    }
 }
 
 
@@ -53,14 +56,14 @@ MyVector::MyVector(size_t size, ValueType value, ResizeStrategy strategy, float 
 }
 
 MyVector::MyVector(const MyVector& copy) {
+    _size = copy._size;
+    _capacity = copy._capacity;
+    _coef = copy._coef;
+    _strategy = copy._strategy;
+    _data = new ValueType[_capacity];
     for (size_t i = 0; i<_size; i++) {
-        _data[i] = copy[i];
+        _data[i] = copy._data[i];
     }
-    this->_data = copy._data;
-    this->_size = copy._size;
-    this->_capacity = copy._capacity;
-    this->_coef = copy._coef;
-    this->_strategy = copy._strategy;
 }
 
 MyVector& MyVector::operator=(const MyVector& copy) {
@@ -115,47 +118,48 @@ ValueType& MyVector:: operator[](const size_t i) {
     return _data[i];
 }
 
-ValueType& MyVector:: operator[](const size_t i) const {
+const ValueType& MyVector:: operator[](const size_t i) const {
     if (i >= _size) {
         throw std::invalid_argument("Element's missing");
     }
-    return this->_data[i];
+    return _data[i];
 }
 
 void MyVector:: pushBack(const ValueType& value) {
-    if (_size+1 >= _capacity) {
+    _size++;
+    if (loadFactor()>=1) {
         changeCapacityInsert();
     }
-    _data[_size] = value;
-    _size++;
+    _data[_size-1] = value;
 }
 
 void MyVector:: insert(const size_t i, const ValueType& value) {
-    if (i<0 || i<_size) {
+    if (i<0 || i>_size) {
         throw std::invalid_argument ("Incorrect position");
     }
     if (i == _size) {
         pushBack(value);
         return;
     }
-    if (_size+1 >= _capacity) {
+    _size++;
+    if (loadFactor()>=1) {
         changeCapacityInsert();
     }
-    _size++;
-    for (size_t j = i; j<_size; j++) {
+    for (size_t j = _size-1; j>=i; j--) {
         _data[j+1] = _data[j];
     }
     _data[i] = value;
 }
 
 void MyVector:: insert(const size_t i, const MyVector& value) {
-    if (i<0 || i<_size) {
+    if (i<0 || i>_size) {
         throw std::invalid_argument ("Incorrect position");
     }
-    if (_size+value._size >= _capacity) {
+    _size += value._size;
+    if (loadFactor()>=1) {
         changeCapacityInsert();
     }
-    for (size_t j = i; j<_size; j++) {
+    for (size_t j = _size-1; j>=i; j--) {
         _data[j+value._size] = _data[j];
     }
     size_t k = 0;
@@ -163,51 +167,54 @@ void MyVector:: insert(const size_t i, const MyVector& value) {
         _data[j] = value._data[k];
         k++;
     }
-    _size += value._size;
 }
 
 
 void MyVector:: popBack() {
+    if (_size == 0) {
+        return;
+    }
+    _size--;
     if (loadFactor()<=(1/_coef)*(1/_coef)) {
         changeCapacityRemove();
     }
-    _size--;
+    _data[_size] = 0;
 }
 
 void MyVector:: erase(const size_t i) {
-    if (i<0 || i<_size) {
+    if (i<0 || i>_size) {
         throw std::invalid_argument ("Incorrect position");
     }
     if (i == _size-1) {
         popBack();
         return;
     }
+    _size--;
     if (loadFactor()<=(1/_coef)*(1/_coef)) {
         changeCapacityRemove();
     }
     for (size_t j = i; j<_size-1; j++) {
         _data[j] = _data[j+1];
     }
-    _size--;
 }
 
 void MyVector:: erase(const size_t i, const size_t len) {
-    if (i<0 || i<_size) {
+    if (i<0 || i>_size || !_data[i+len]) {
         throw std::invalid_argument ("Incorrect position");
-    }
-    if (loadFactor()<=(1/_coef)*(1/_coef)) {
-        changeCapacityRemove();
     }
     for (size_t j = i; j<_size-len; j++) {
         _data[j] = _data[j+len];
     }
     _size -= len;
+    if (loadFactor()<=(1/_coef)*(1/_coef)) {
+        changeCapacityRemove();
+    }
 }
 
 long long int MyVector:: find(const ValueType& value, bool isBegin) const {
     if (isBegin == true) {
         size_t i = 0;
-        while (_data[i] != value ) {
+        while (_data[i] != value) {
             i++;
         }
         return i+1;
@@ -287,9 +294,13 @@ void MyVector:: changeCapacityInsert() {
 
 void MyVector:: changeCapacityRemove() {
     if (_strategy == ResizeStrategy::Additive) {
-        _capacity += 1/_coef;
+        _capacity = _size+_coef;
     }
     else {
-        _capacity *= 1/_coef;
+        if (_size == 0) {
+            _capacity = 1;
+            return;
+        }
+        _capacity = _size*_coef;
     }
 }
