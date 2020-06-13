@@ -61,7 +61,7 @@ MyVector::MyVector(const MyVector& copy) {
     _coef = copy._coef;
     _strategy = copy._strategy;
     _data = new ValueType[_capacity];
-    for (size_t i = 0; i<_size; i++) {
+    for (size_t i = 0; i<copy._capacity; i++) {
         _data[i] = copy._data[i];
     }
 }
@@ -78,7 +78,7 @@ MyVector& MyVector::operator=(const MyVector& copy) {
     delete [] _data;
     
     _data = new ValueType[copy._capacity];
-    for (size_t i = 0; i<_size; i++) {
+    for (size_t i = 0; i<copy._size; i++) {
         _data[i] = copy._data[i];
     }
     return *this;
@@ -128,7 +128,7 @@ const ValueType& MyVector:: operator[](const size_t i) const {
 void MyVector:: pushBack(const ValueType& value) {
     _size++;
     if (loadFactor()>=1) {
-        changeCapacityInsert();
+        changeCapacityInsert(_size-1);
     }
     _data[_size-1] = value;
 }
@@ -143,7 +143,7 @@ void MyVector:: insert(const size_t i, const ValueType& value) {
     }
     _size++;
     if (loadFactor()>=1) {
-        changeCapacityInsert();
+        changeCapacityInsert(_size-1);
     }
     for (size_t j = _size-1; j>=i; j--) {
         _data[j+1] = _data[j];
@@ -156,8 +156,8 @@ void MyVector:: insert(const size_t i, const MyVector& value) {
         throw std::invalid_argument ("Incorrect position");
     }
     _size += value._size;
-    if (loadFactor()>=1) {
-        changeCapacityInsert();
+    while (loadFactor()>=1) {
+        changeCapacityInsert(_size-value._size);
     }
     for (size_t j = _size-1; j>=i; j--) {
         _data[j+value._size] = _data[j];
@@ -176,7 +176,7 @@ void MyVector:: popBack() {
     }
     _size--;
     if (loadFactor()<=(1/_coef)*(1/_coef)) {
-        changeCapacityRemove();
+        changeCapacityRemove(_size);
     }
     _data[_size] = 0;
 }
@@ -191,7 +191,7 @@ void MyVector:: erase(const size_t i) {
     }
     _size--;
     if (loadFactor()<=(1/_coef)*(1/_coef)) {
-        changeCapacityRemove();
+        changeCapacityRemove(_size);
     }
     for (size_t j = i; j<_size-1; j++) {
         _data[j] = _data[j+1];
@@ -199,15 +199,15 @@ void MyVector:: erase(const size_t i) {
 }
 
 void MyVector:: erase(const size_t i, const size_t len) {
-    if (i<0 || i>_size || !_data[i+len]) {
-        throw std::invalid_argument ("Incorrect position");
+    if (i<0 || i>_size ) {
+        throw std::invalid_argument ("Incorrect position1");
     }
     for (size_t j = i; j<_size-len; j++) {
         _data[j] = _data[j+len];
     }
     _size -= len;
     if (loadFactor()<=(1/_coef)*(1/_coef)) {
-        changeCapacityRemove();
+        changeCapacityRemove(_size);
     }
 }
 
@@ -253,7 +253,7 @@ void MyVector:: resize(const size_t size, const ValueType value) {
         return;
     }
     if (size>_capacity) {
-        changeCapacityInsert();
+        changeCapacityInsert(_size);
     }
     if (size>_size) {
         for (size_t i = _size; i<size; i++) {
@@ -283,24 +283,66 @@ void MyVector:: print() {
     }
 }
 
-void MyVector:: changeCapacityInsert() {
+void MyVector:: changeCapacityInsert(size_t copyNum) {
     if (_strategy == ResizeStrategy::Additive) {
-        _capacity += _coef;
+        MyVector bufVector(*this);
+        size_t bufCapacity = std::ceil(bufVector._capacity + bufVector._coef);
+        delete[] _data;
+        _data = new ValueType[bufCapacity];
+        _capacity = bufCapacity;
+        _size = bufVector._size;
+        _coef = bufVector._coef;
+        _strategy = bufVector._strategy;
+        for (size_t i = 0; i<copyNum; i++) {
+            _data[i] = bufVector._data[i];
+        }
     }
     else {
-        _capacity *= _coef;
+        MyVector bufVector(*this);
+        size_t bufCapacity = std::ceil(bufVector._capacity * bufVector._coef);
+        delete[] _data;
+        _data = new ValueType[bufCapacity];
+        _capacity = bufCapacity;
+        _size = bufVector._size;
+        _coef = bufVector._coef;
+        _strategy = bufVector._strategy;
+        for (size_t i = 0; i<copyNum; i++) {
+            _data[i] = bufVector._data[i];
+        }
     }
 }
 
-void MyVector:: changeCapacityRemove() {
+void MyVector:: changeCapacityRemove(size_t copyNum) {
     if (_strategy == ResizeStrategy::Additive) {
-        _capacity = _size+_coef;
+        MyVector bufVector(*this);
+        size_t bufCapacity = std::ceil(bufVector._size + bufVector._coef);
+        delete[] _data;
+        _data = new ValueType[bufCapacity];
+        _capacity = bufCapacity;
+        _size = bufVector._size;
+        _coef = bufVector._coef;
+        _strategy = bufVector._strategy;
+        for (size_t i = 0; i<copyNum; i++) {
+            _data[i] = bufVector._data[i];
+        }
     }
     else {
-        if (_size == 0) {
-            _capacity = 1;
-            return;
+        MyVector bufVector(*this);
+        size_t bufCapacity;
+        if (bufVector._size == 0) {
+            bufCapacity = 1;
         }
-        _capacity = _size*_coef;
+        else {
+            bufCapacity = std::ceil(bufVector._size * bufVector._coef);
+        }
+        delete[] _data;
+        _data = new ValueType[bufCapacity];
+        _capacity = bufCapacity;
+        _size = bufVector._size;
+        _coef = bufVector._coef;
+        _strategy = bufVector._strategy;
+        for (size_t i = 0; i<copyNum; i++) {
+            _data[i] = bufVector._data[i];
+        }
     }
 }

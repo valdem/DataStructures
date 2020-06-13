@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <cstdlib>
+#include <cmath>
 
 // стратегия изменения capacity
 enum class ResizeStrategy {
@@ -109,8 +110,8 @@ public:
     void clear();
     
     void print();
-    void changeCapacityInsert();
-    void changeCapacityRemove();
+    void changeCapacityInsert(size_t copyNum);
+    void changeCapacityRemove(size_t copyNum);
     
     MyVector sortedSquares(const MyVector& vec, SortedStrategy strategy) {
         for (size_t i = 0; i<vec._size; i++) {
