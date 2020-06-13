@@ -16,45 +16,50 @@ void DoubleList::Node::insertNext(const ValueType& value)
 {
     Node* newNode = new Node(value, this->next, this);
     this->next = newNode;
-    this->next->prev = newNode;
 }
 
 void DoubleList::Node::removeNext()
 {
+    if (this->next == nullptr) {
+        throw std::invalid_argument("Element's missing");
+    }
     Node* removeNode = this->next;
     Node* newNext = removeNode->next;
-    delete removeNode;
     this->next = newNext;
+    this->next->prev = this;
+    delete removeNode;
 }
 
 void DoubleList::Node::insertPrev(const ValueType& value)
 {
     Node* newNode = new Node(value, this, this->prev);
     this->prev = newNode;
-    this->prev->next = newNode;
 }
 
 void DoubleList::Node::removePrev()
 {
+    if (this->prev == nullptr) {
+        throw std::invalid_argument("Element's missing");
+    }
     Node* removeNode = this->prev;
     Node* newPrev = removeNode->prev;
-    delete removeNode;
     this->prev = newPrev;
     newPrev->next = this;
-    
+    delete removeNode;
 }
 
 DoubleList::DoubleList() 
-    : _head(nullptr), _size(0)
+    : _head(nullptr), _tail(nullptr), _size(0)
 {
     
 }
 
 DoubleList::DoubleList(const DoubleList& copyList)
 {
-    this->_size = copyList._size;
-    if (this->_size == 0) {
+    _size = copyList._size;
+    if (_size == 0) {
         this->_head = nullptr;
+        this->_tail = nullptr;
         return;
     }
     else {
@@ -65,9 +70,11 @@ DoubleList::DoubleList(const DoubleList& copyList)
 
         while (currentCopyNode->next) {
             currentNode->next = new Node(currentCopyNode->next->value);
+            currentNode->next->prev = currentNode;
             currentCopyNode = currentCopyNode->next;
             currentNode = currentNode->next;
         }
+        _tail = currentNode;
     }
 }
 
@@ -82,9 +89,11 @@ DoubleList& DoubleList::operator=(const DoubleList& copyList)
         
         this->_size = bufList._size;
         this->_head = bufList._head;
+        this->_tail = bufList._tail;
 
         bufList._size = 0;
         bufList._head = nullptr;
+        bufList._tail = nullptr;
         
         return *this;
     }
@@ -94,9 +103,11 @@ DoubleList::DoubleList(DoubleList&& moveList) noexcept
 {
     this->_size = moveList._size;
     this->_head = moveList._head;
+    this->_tail = moveList._tail;
 
     moveList._size = 0;
     moveList._head = nullptr;
+    moveList._tail = nullptr;
 }
 
 DoubleList& DoubleList::operator=(DoubleList&& moveList) noexcept
@@ -108,9 +119,11 @@ DoubleList& DoubleList::operator=(DoubleList&& moveList) noexcept
         forceNodeDelete(_head);
         this->_size = moveList._size;
         this->_head = moveList._head;
+        this->_tail = moveList._tail;
 
         moveList._size = 0;
         moveList._head = nullptr;
+        moveList._tail = nullptr;
 
         return *this;
     }
@@ -155,11 +168,11 @@ void DoubleList::insert(const size_t pos, const ValueType& value)
     if (pos == 0) {
         pushFront(value);
     }
+    else if (pos == _size) {
+        pushBack(value);
+    }
     else {
-        Node* bufNode = this->_head;
-        for (size_t i = 0; i < pos-1; ++i) {
-            bufNode = bufNode->next;
-        }
+        Node* bufNode = getNode(pos-1);
         bufNode->insertNext(value);
         ++_size;
     }
@@ -168,81 +181,98 @@ void DoubleList::insert(const size_t pos, const ValueType& value)
 void DoubleList::insertAfterNode(Node* node, const ValueType& value)
 {
     node->insertNext(value);
-    _size += 1;
+    _size++;
 }
 
 void DoubleList::insertBeforeNode(Node* node, const ValueType& value) {
     node->insertPrev(value);
-    _size += 1;
+    _size++;
 }
 
 void DoubleList::pushBack(const ValueType& value)
 {
-    Node* newNode = new Node(sizeof(struct Node));
-    Node* last = _head;
-    newNode->value = value;
-    newNode->next = nullptr;
-    if (_head == nullptr) {
-        newNode->prev = nullptr;
-        _head = newNode;
+    if (_size == 0) {
+        pushFront(value);
+    }
+    else if (_size == 1) {
+        Node* newNode = new Node(value, nullptr, _head);
+        _head->next = newNode;
+        _tail = newNode;
+        _size++;
     }
     else {
-        while (last->next != nullptr) {
-            last = last->next;
-        }
-        last->next = newNode;
-        newNode->prev = last;
+        _tail->next = new Node(value, nullptr, _tail);
+        _tail = _tail->next;
+        _size++;
     }
 }
 
 void DoubleList::pushFront(const ValueType& value)
 {
-    Node* newNode = new Node(value, _head, nullptr);
-    if (_head != nullptr) {
-        _head->prev = newNode;
+    if (_size == 1) {
+        Node* newNode = new Node(value, nullptr, _head);
+        _head->next = newNode;
+        _tail = newNode;
+        _size++;
     }
-    _head = newNode;
+    else {
+        Node* bufNode = _head;
+        _head = new Node(value);
+        if (bufNode != nullptr) {
+            _head->next = bufNode;
+            _head->next->prev = _head;
+        }
+    }
     _size++;
 }
 
 void DoubleList::remove(const size_t pos)
 {
+    if (pos<0 || pos >= _size) {
+        throw std::invalid_argument("Element's missing");
+    }
     if (pos == 0) {
-        delete _head;
-        this->_head = this->_head->next;
-        this->_head->prev = nullptr;
+        removeFront();
+    }
+    else if (pos == _size-1) {
+        removeBack();
     }
     else {
-        Node* temp = this->_head;
-        for (size_t i = 0; i<pos-1; i++) {
-            temp = temp->next;
-        }
-        delete temp->next;
-        temp->next = temp->next->next;
+        Node* bufNode = getNode(pos-1);
+        bufNode->removeNext();
+        _size--;
     }
-    this->_size -= 1;
 }
 
 void DoubleList::removeNextNode(Node* node)
 {
     node->removeNext();
-    this->_size--;
+    _size--;
 }
 
 void DoubleList::removePrevNode(Node* node) {
     node->removePrev();
-    this->_size--;
+    _size--;
 }
 
 void DoubleList::removeFront() {
-    _head->next->prev = nullptr;
+    if (_head == nullptr) {
+        throw std::invalid_argument("Element's missing");
+    }
+    Node* temp = _head->next;
     delete _head;
-    _head = _head->next;
-    this->_size -= 1;
+    _head = temp;
+    _size--;
 }
 
 void DoubleList::removeBack() {
-    remove(_size-1);
+    if (_tail == nullptr) {
+        throw std::invalid_argument("Element's missing");
+    }
+    Node* temp = _tail->prev;
+    delete _tail;
+    _tail = temp;
+    _size--;
 }
 
 long long int DoubleList::findIndex(const ValueType& value) const
@@ -267,38 +297,28 @@ long long int DoubleList::findIndex(const ValueType& value) const
 
 DoubleList::Node* DoubleList::findNode(const ValueType& value) const
 {
-    Node* findNext = _head->next;
-    Node* findNode = nullptr;
-    size_t i = 1;
-    if (_head->value == value) {
-        findNode = _head;
-    }
-    else {
-        while (findNext) {
-            if (findNext->value == value) {
-                findNode = findNext;
-            }
-            findNext = findNext->next;
-            i++;
+    Node* findNode = _head;
+    for (size_t i = 0; i<_size; i++) {
+        if (findNode->value == value) {
+            return findNode;
         }
+        findNode = findNode->next;
     }
-    return findNode;
+    throw std::invalid_argument("Element's missing");
 }
 
 void DoubleList::reverse()
 {
-    Node* current = this->_head;
-    Node* temp = nullptr;
-    while (current != nullptr) {
-        temp = current->prev;
-        current->prev = current->next;
-        current->next = temp;
-        current = current->prev;
+    Node* temp = _tail;
+    _tail->next = _tail->prev;
+    _tail->prev = nullptr;
+    _tail = _head;
+    _head = temp;
+    while (temp->next) {
+        temp->next->next = temp->next->prev;
+        temp->next->prev = temp;
+        temp = temp->next;
     }
-    if (temp != nullptr) {
-        temp = temp->prev;
-    }
-    
 }
 
 DoubleList DoubleList:: reverse() const {
@@ -331,9 +351,7 @@ void DoubleList::forceNodeDelete(Node* node)
 }
 
 void DoubleList:: print() {
-    Node* temp = _head;
-    while (temp != nullptr) {
-        std::cout<<temp->prev<<" "<<temp->value<<" "<<temp->next<<std::endl;
-        temp = temp->next;
+    for (int i = 0; i<_size; i++) {
+        std::cout<<getNode(i)->value<<std::endl;
     }
 }
