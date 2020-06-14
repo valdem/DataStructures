@@ -233,15 +233,30 @@ void MyVector:: reserve(const size_t capacity) {
     if (capacity == _capacity) {
         return;
     }
-    if (capacity<_size) {
-        if (capacity-1 < 0) {
-            throw std::invalid_argument ("Too small capacity");
-        }
+    if (capacity > _capacity) {
+        MyVector bufVector(*this);
+        delete[] _data;
+        _data = new ValueType[capacity];
         _capacity = capacity;
-        resize(capacity-1);
-        return;
+        _size = bufVector._size;
+        _coef = bufVector._coef;
+        _strategy = bufVector._strategy;
+        for (size_t i = 0; i<_size; i++) {
+            _data[i] = bufVector._data[i];
+        }
     }
-    _capacity = capacity;
+    else {
+        MyVector bufVector(*this);
+        delete[] _data;
+        _data = new ValueType[capacity];
+        _capacity = capacity;
+        _coef = bufVector._coef;
+        _strategy = bufVector._strategy;
+        for (size_t i = 0; i<capacity; i++) {
+            _data[i] = bufVector._data[i];
+        }
+        resize(capacity-1);
+    }
 }
 
 
